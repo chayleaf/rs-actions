@@ -23,9 +23,8 @@ function getTarget(): string
     else
     {
         core.setFailed(`Unsupported operating system: ${os}`);
-        process.exitCode = 1
+        process.exit();
     }
-    return '';
 }
 
 async function run()
