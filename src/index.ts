@@ -37,7 +37,7 @@ async function run()
         await exec.exec('cargo', ['build', '--release', '--target', target]);
         core.setOutput('output', 'Successfully compiled Rust code.');
     }
-    catch (error: any)
+    catch (error: unknown)
     {
         if (error instanceof Error)
             core.setFailed(error.message);
