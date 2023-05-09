@@ -79,7 +79,21 @@ async function run()
         const target: string = getTarget();
 
         await exec.exec('cargo', ['build', '--release', '--target', target]);
+
+        const assetPath = `target/${target}/release/my_rust_binary`;
+        const assetName = 'my_rust_binary';
+
+        const uploadUrl = await createRelease(
+            github.context.ref,
+            github.context.sha,
+            'Release',
+            'Description of the release.'
+        );
+
+        await uploadAsset(uploadUrl, assetPath, assetName);
+
         core.setOutput('output', 'Successfully compiled Rust code.');
+
     }
     catch (error: unknown)
     {
