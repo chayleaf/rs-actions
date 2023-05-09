@@ -2,7 +2,8 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 
-async function createRelease(tagName: string, targetCommitish: string, name: string, body: string): Promise<string> {
+async function createRelease(tagName: string, targetCommitish: string, name: string, body: string): Promise<string>
+{
     const octokit = github.getOctokit(
         core.getInput('github-token', { required: true }));
 
