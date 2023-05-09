@@ -28,7 +28,8 @@ function getTarget(): string
     return '';
 }
 
-async function run() {
+async function run()
+{
     try
     {
         let target: string = getTarget();
