@@ -3,7 +3,7 @@ import * as exec from '@actions/exec';
 
 function getTarget(): string
 {
-    let target: string = core.getInput('target');
+    const target: string = core.getInput('target');
 
     if (target !== '') return target;
 
