@@ -32,7 +32,7 @@ async function run()
 {
     try
     {
-        let target: string = getTarget();
+        const target: string = getTarget();
 
         await exec.exec('cargo', ['build', '--release', '--target', target]);
         core.setOutput('output', 'Successfully compiled Rust code.');
