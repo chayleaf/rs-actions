@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
+import * as fs from 'fs/promises';
+import * as toml from 'toml'
 
 async function createRelease(tagName: string, targetCommitish: string, name: string, body: string): Promise<string>
 {
@@ -73,6 +75,28 @@ function getTarget(): string
     }
 }
 
+async function getVersionFromToml(): Promise<string>
+{
+    const cargoTomlPath: string = core.getInput('cargo-toml-path');
+
+    try
+    {
+        const cargoTomlContents: string = await fs.readFile(
+            cargoTomlPath !== '' ? cargoTomlPath : 'cargo.toml',
+            { encoding: 'utf8' }
+        );
+        const cargoToml: any = toml.parse(cargoTomlContents);
+        return `v${cargoToml.package.version}`;
+    }
+    catch (error: any)
+    {
+        if (error instanceof Error)
+            core.setFailed(error.message);
+        process.exit();
+    }
+}
+
+
 async function run()
 {
     try
@@ -84,16 +108,26 @@ async function run()
         const assetPath = `target/${target}/release/my_rust_binary`;
         const assetName = 'my_rust_binary';
 
+        const publishRelease = core.getInput('publish-release') === 'true';
+
+        if (!publishRelease)
+        {
+            core.setOutput('output', 'Successfully compiled Rust code.');
+            process.exit();
+        }
+
+        const releaseName: string = await getVersionFromToml();
+
         const uploadUrl = await createRelease(
             github.context.ref,
             github.context.sha,
-            'Release',
+            releaseName,
             'Description of the release.'
         );
 
         await uploadAsset(uploadUrl, assetPath, assetName);
 
-        core.setOutput('output', 'Successfully compiled Rust code.');
+        core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
 
     }
     catch (error: unknown)
