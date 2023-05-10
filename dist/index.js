@@ -117,10 +117,11 @@ function getProjectToml() {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            const target = getTarget();
             if (process.platform === 'darwin') {
                 yield exec.exec('rustup', ['target', 'add', 'aarch64-apple-darwin']);
             }
-            yield exec.exec('cargo', ['build', '--release', '--target', getTarget()]);
+            yield exec.exec('cargo', ['build', '--release', '--target', target]);
             const cargoToml = yield getProjectToml();
             const publishRelease = core.getInput('publish-release') === 'true';
             if (!publishRelease) {
@@ -135,8 +136,8 @@ function run() {
             const releaseName = `v${cargoToml.package.version}`;
             const uploadUrl = yield createRelease(releaseName, github.context.sha, releaseName, 'Description of the release.', githubToken);
             yield uploadAsset(uploadUrl, process.platform === 'win32' ?
-                `target/release/${cargoToml.package.name}.exe` :
-                `target/release/${cargoToml.package.name}`, cargoToml.package.name, githubToken);
+                `target/${target}/release/${cargoToml.package.name}.exe` :
+                `target/${target}/release/${cargoToml.package.name}`, cargoToml.package.name, githubToken);
             core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
         }
         catch (error) {

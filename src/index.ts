@@ -97,11 +97,12 @@ async function run()
 {
     try
     {
+        const target = getTarget();
         if (process.platform === 'darwin')
         {
             await exec.exec('rustup', ['target', 'add', 'aarch64-apple-darwin']);
         }
-        await exec.exec('cargo', ['build', '--release', '--target', getTarget()]);
+        await exec.exec('cargo', ['build', '--release', '--target', target]);
 
         const cargoToml: any = await getProjectToml();
 
@@ -132,8 +133,8 @@ async function run()
         await uploadAsset(
             uploadUrl,
             process.platform === 'win32' ?
-                `target/release/${cargoToml.package.name}.exe` :
-                `target/release/${cargoToml.package.name}`,
+                `target/${target}/release/${cargoToml.package.name}.exe` :
+                `target/${target}/release/${cargoToml.package.name}`,
             cargoToml.package.name,
             githubToken
         );
