@@ -2,6 +2,8 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import * as fs from 'fs/promises';
+import { platform } from 'os';
+import { normalize } from 'path';
 import * as toml from 'toml'
 
 async function createRelease(tagName: string, targetCommitish: string, name: string, body: string, githubToken: string): Promise<string>
@@ -24,6 +26,7 @@ async function createRelease(tagName: string, targetCommitish: string, name: str
 
 async function uploadAsset(uploadUrl: string, assetPath: string, assetName: string, githubToken: string): Promise<void>
 {
+    assetPath = normalize(assetPath);
     const octokit = github.getOctokit(githubToken);
 
     const headers = {
@@ -95,6 +98,10 @@ async function run()
 {
     try
     {
+        if (process.platform === 'darwin')
+        {
+            await exec.exec('rustup', ['target', 'add', 'aarch64-apple-darwin']);
+        }
         await exec.exec('cargo', ['build', '--release', '--target', getTarget()]);
 
         const cargoToml: any = await getProjectToml();
@@ -129,7 +136,8 @@ async function run()
                 `target/release/${cargoToml.package.name}.exe` :
                 `target/release/${cargoToml.package.name}`,
             cargoToml.package.name,
-            githubToken);
+            githubToken
+        );
 
         core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
 

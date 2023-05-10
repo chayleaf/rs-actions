@@ -43,6 +43,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const github = __importStar(__nccwpck_require__(5438));
 const fs = __importStar(__nccwpck_require__(3292));
+const path_1 = __nccwpck_require__(1017);
 const toml = __importStar(__nccwpck_require__(4920));
 function createRelease(tagName, targetCommitish, name, body, githubToken) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -62,6 +63,7 @@ function createRelease(tagName, targetCommitish, name, body, githubToken) {
 }
 function uploadAsset(uploadUrl, assetPath, assetName, githubToken) {
     return __awaiter(this, void 0, void 0, function* () {
+        assetPath = (0, path_1.normalize)(assetPath);
         const octokit = github.getOctokit(githubToken);
         const headers = {
             'content-type': 'application/octet-stream',
@@ -115,6 +117,9 @@ function getProjectToml() {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            if (process.platform === 'darwin') {
+                yield exec.exec('rustup', ['target', 'add', 'aarch64-apple-darwin']);
+            }
             yield exec.exec('cargo', ['build', '--release', '--target', getTarget()]);
             const cargoToml = yield getProjectToml();
             const publishRelease = core.getInput('publish-release') === 'true';
