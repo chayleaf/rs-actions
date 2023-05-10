@@ -55,16 +55,16 @@ function getTarget(): string
 
     if (target !== '') return target;
 
-    const os: string = core.getInput('os', { required: true });
-    if (os.includes('ubuntu'))
+    const os: string = process.platform;
+    if (os.includes('linux'))
     {
         return 'x86_64-unknown-linux-gnu';
     }
-    else if (os.includes('windows'))
+    else if (os.includes('win32'))
     {
         return 'x86_64-pc-windows-msvc';
     }
-    else if (os.includes('macos'))
+    else if (os.includes('darwin'))
     {
         return 'x86_64-apple-darwin';
     }
