@@ -119,7 +119,7 @@ async function run()
         const releaseName: string = await getVersionFromToml();
 
         const uploadUrl = await createRelease(
-            github.context.ref,
+            releaseName,
             github.context.sha,
             releaseName,
             'Description of the release.'
