@@ -46,7 +46,7 @@ const fs = __importStar(__nccwpck_require__(3292));
 const toml = __importStar(__nccwpck_require__(4920));
 function createRelease(tagName, targetCommitish, name, body, githubToken) {
     return __awaiter(this, void 0, void 0, function* () {
-        const octokit = github.getOctokit(githubToken, { required: true });
+        const octokit = github.getOctokit(githubToken);
         const createReleaseResponse = yield octokit.rest.repos.createRelease({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
@@ -62,7 +62,7 @@ function createRelease(tagName, targetCommitish, name, body, githubToken) {
 }
 function uploadAsset(uploadUrl, assetPath, assetName, githubToken) {
     return __awaiter(this, void 0, void 0, function* () {
-        const octokit = github.getOctokit(core.getInput(githubToken, { required: true }));
+        const octokit = github.getOctokit(githubToken);
         const headers = {
             'content-type': 'application/octet-stream',
             'content-length': String((yield fs.stat(assetPath)).size),

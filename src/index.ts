@@ -6,7 +6,7 @@ import * as toml from 'toml'
 
 async function createRelease(tagName: string, targetCommitish: string, name: string, body: string, githubToken: string): Promise<string>
 {
-    const octokit = github.getOctokit(githubToken, { required: true });
+    const octokit = github.getOctokit(githubToken);
 
     const createReleaseResponse = await octokit.rest.repos.createRelease({
         owner: github.context.repo.owner,
@@ -24,8 +24,7 @@ async function createRelease(tagName: string, targetCommitish: string, name: str
 
 async function uploadAsset(uploadUrl: string, assetPath: string, assetName: string, githubToken: string): Promise<void>
 {
-    const octokit = github.getOctokit(
-        core.getInput(githubToken, { required: true }));
+    const octokit = github.getOctokit(githubToken);
 
     const headers = {
         'content-type': 'application/octet-stream',
