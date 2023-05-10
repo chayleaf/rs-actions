@@ -65,13 +65,13 @@ function uploadAsset(uploadUrl, assetPath, assetName, githubToken) {
         const octokit = github.getOctokit(core.getInput(githubToken, { required: true }));
         const headers = {
             'content-type': 'application/octet-stream',
-            'content-length': String((__nccwpck_require__(7147).statSync)(assetPath).size),
+            'content-length': String((yield fs.stat(assetPath)).size),
         };
         const uploadAssetResponse = yield octokit.request({
             method: 'POST',
             url: uploadUrl,
             headers,
-            data: (__nccwpck_require__(7147).readFileSync)(assetPath),
+            data: yield fs.readFile(assetPath),
         });
         if (uploadAssetResponse.status !== 201) {
             throw new Error(`Failed to upload asset: ${uploadAssetResponse.status} - ${uploadAssetResponse.data}`);

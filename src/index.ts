@@ -29,14 +29,14 @@ async function uploadAsset(uploadUrl: string, assetPath: string, assetName: stri
 
     const headers = {
         'content-type': 'application/octet-stream',
-        'content-length': String(require('fs').statSync(assetPath).size),
+        'content-length': String((await fs.stat(assetPath)).size),
     };
 
     const uploadAssetResponse = await octokit.request({
         method: 'POST',
         url: uploadUrl,
         headers,
-        data: require('fs').readFileSync(assetPath),
+        data: await fs.readFile(assetPath),
     });
 
     if (uploadAssetResponse.status !== 201)
