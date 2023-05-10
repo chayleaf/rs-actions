@@ -83,28 +83,27 @@ function getTarget() {
     const target = core.getInput('target');
     if (target !== '')
         return target;
-    const os = process.platform;
-    if (os.includes('linux')) {
+    if (process.platform === 'linux') {
         return 'x86_64-unknown-linux-gnu';
     }
-    else if (os.includes('win32')) {
+    else if (process.platform === 'win32') {
         return 'x86_64-pc-windows-msvc';
     }
-    else if (os.includes('darwin')) {
-        return 'x86_64-apple-darwin';
+    else if (process.platform === 'darwin') {
+        return 'aarch64-apple-darwin';
     }
     else {
-        core.setFailed(`Unsupported operating system: ${os}`);
+        core.setFailed(`Unsupported operating system: ${process.platform}`);
         process.exit();
     }
 }
-function getVersionFromToml() {
+function getProjectToml() {
     return __awaiter(this, void 0, void 0, function* () {
         const cargoTomlPath = core.getInput('cargo-toml-path');
         try {
             const cargoTomlContents = yield fs.readFile(cargoTomlPath !== '' ? cargoTomlPath : 'Cargo.toml', { encoding: 'utf8' });
-            const cargoToml = toml.parse(cargoTomlContents);
-            return `v${cargoToml.package.version}`;
+            return toml.parse(cargoTomlContents);
+            ;
         }
         catch (error) {
             if (error instanceof Error)
@@ -116,10 +115,8 @@ function getVersionFromToml() {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const target = getTarget();
-            yield exec.exec('cargo', ['build', '--release', '--target', target]);
-            const assetPath = `target/${target}/release/my_rust_binary`;
-            const assetName = 'my_rust_binary';
+            yield exec.exec('cargo', ['build', '--release', '--target', getTarget()]);
+            const cargoToml = yield getProjectToml();
             const publishRelease = core.getInput('publish-release') === 'true';
             if (!publishRelease) {
                 core.setOutput('output', 'Successfully compiled Rust code.');
@@ -130,9 +127,11 @@ function run() {
                 core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
                 process.exit();
             }
-            const releaseName = yield getVersionFromToml();
+            const releaseName = `v${cargoToml.package.version}`;
             const uploadUrl = yield createRelease(releaseName, github.context.sha, releaseName, 'Description of the release.', githubToken);
-            yield uploadAsset(uploadUrl, assetPath, assetName, githubToken);
+            yield uploadAsset(uploadUrl, process.platform === 'win32' ?
+                `target/release/${cargoToml.package.name}.exe` :
+                `target/release/${cargoToml.package.name}`, cargoToml.package.name, githubToken);
             core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
         }
         catch (error) {

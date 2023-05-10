@@ -51,42 +51,39 @@ function getTarget(): string
 {
     const target: string = core.getInput('target');
 
-    if (target !== '') return target;
+    if (target !== '')
+        return target;
 
-    const os: string = process.platform;
-    if (os.includes('linux'))
+    if (process.platform === 'linux')
     {
         return 'x86_64-unknown-linux-gnu';
     }
-    else if (os.includes('win32'))
+    else if (process.platform === 'win32')
     {
         return 'x86_64-pc-windows-msvc';
     }
-    else if (os.includes('darwin'))
+    else if (process.platform === 'darwin')
     {
-        return 'x86_64-apple-darwin';
+        return 'aarch64-apple-darwin';
     }
     else
     {
-        core.setFailed(`Unsupported operating system: ${os}`);
+        core.setFailed(`Unsupported operating system: ${process.platform}`);
         process.exit();
     }
 }
 
-async function getVersionFromToml(): Promise<string>
+async function getProjectToml(): Promise<string>
 {
     const cargoTomlPath: string = core.getInput('cargo-toml-path');
-
     try
     {
         const cargoTomlContents: string = await fs.readFile(
             cargoTomlPath !== '' ? cargoTomlPath : 'Cargo.toml',
-            { encoding: 'utf8' }
-        );
-        const cargoToml: any = toml.parse(cargoTomlContents);
-        return `v${cargoToml.package.version}`;
+            { encoding: 'utf8' });
+        return toml.parse(cargoTomlContents);;
     }
-    catch (error: any)
+    catch (error: unknown)
     {
         if (error instanceof Error)
             core.setFailed(error.message);
@@ -94,19 +91,15 @@ async function getVersionFromToml(): Promise<string>
     }
 }
 
-
 async function run()
 {
     try
     {
-        const target: string = getTarget();
+        await exec.exec('cargo', ['build', '--release', '--target', getTarget()]);
 
-        await exec.exec('cargo', ['build', '--release', '--target', target]);
+        const cargoToml: any = await getProjectToml();
 
-        const assetPath = `target/${target}/release/my_rust_binary`;
-        const assetName = 'my_rust_binary';
-
-        const publishRelease = core.getInput('publish-release') === 'true';
+        const publishRelease: boolean = core.getInput('publish-release') === 'true';
         if (!publishRelease)
         {
             core.setOutput('output', 'Successfully compiled Rust code.');
@@ -120,7 +113,7 @@ async function run()
             process.exit();
         }
 
-        const releaseName: string = await getVersionFromToml();
+        const releaseName: string = `v${cargoToml.package.version}`;
 
         const uploadUrl = await createRelease(
             releaseName,
@@ -130,7 +123,13 @@ async function run()
             githubToken
         );
 
-        await uploadAsset(uploadUrl, assetPath, assetName, githubToken);
+        await uploadAsset(
+            uploadUrl,
+            process.platform === 'win32' ?
+                `target/release/${cargoToml.package.name}.exe` :
+                `target/release/${cargoToml.package.name}`,
+            cargoToml.package.name,
+            githubToken);
 
         core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
 
