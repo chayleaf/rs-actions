@@ -25,8 +25,16 @@ async function createRelease(tagName: string, targetCommitish: string, name: str
 
 async function uploadAsset(uploadUrl: string, assetPath: string, assetName: string): Promise<void>
 {
+    const githubToken: string | undefined = process.env.GITHUB_TOKEN;
+
+    if (githubToken === undefined)
+    {
+        core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
+        process.exit();
+    }
+
     const octokit = github.getOctokit(
-        core.getInput('github-token', { required: true }));
+        core.getInput(githubToken, { required: true }));
 
     const headers = {
         'content-type': 'application/octet-stream',
@@ -78,15 +86,11 @@ function getTarget(): string
 async function getVersionFromToml(): Promise<string>
 {
     const cargoTomlPath: string = core.getInput('cargo-toml-path');
-    let path = await fs.readdir('./')
-    console.info(path);
-    path = await fs.readdir('../')
-    console.info(path);
 
     try
     {
         const cargoTomlContents: string = await fs.readFile(
-            cargoTomlPath !== '' ? cargoTomlPath : 'cargo.toml',
+            cargoTomlPath !== '' ? cargoTomlPath : 'Cargo.toml',
             { encoding: 'utf8' }
         );
         const cargoToml: any = toml.parse(cargoTomlContents);

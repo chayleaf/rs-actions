@@ -62,7 +62,12 @@ function createRelease(tagName, targetCommitish, name, body) {
 }
 function uploadAsset(uploadUrl, assetPath, assetName) {
     return __awaiter(this, void 0, void 0, function* () {
-        const octokit = github.getOctokit(core.getInput('github-token', { required: true }));
+        const githubToken = process.env.GITHUB_TOKEN;
+        if (githubToken === undefined) {
+            core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
+            process.exit();
+        }
+        const octokit = github.getOctokit(core.getInput(githubToken, { required: true }));
         const headers = {
             'content-type': 'application/octet-stream',
             'content-length': String((__nccwpck_require__(7147).statSync)(assetPath).size),
@@ -101,12 +106,8 @@ function getTarget() {
 function getVersionFromToml() {
     return __awaiter(this, void 0, void 0, function* () {
         const cargoTomlPath = core.getInput('cargo-toml-path');
-        let path = yield fs.readdir('./');
-        console.info(path);
-        path = yield fs.readdir('../');
-        console.info(path);
         try {
-            const cargoTomlContents = yield fs.readFile(cargoTomlPath !== '' ? cargoTomlPath : 'cargo.toml', { encoding: 'utf8' });
+            const cargoTomlContents = yield fs.readFile(cargoTomlPath !== '' ? cargoTomlPath : 'Cargo.toml', { encoding: 'utf8' });
             const cargoToml = toml.parse(cargoTomlContents);
             return `v${cargoToml.package.version}`;
         }
