@@ -2,7 +2,6 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from '@actions/github';
 import * as fs from 'fs/promises';
-import { platform } from 'os';
 import { normalize } from 'path';
 import * as toml from 'toml'
 
