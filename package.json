@@ -4,7 +4,7 @@
   "description": "Cross-platform compilation for Rust projects and automatic releases",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && ncc build ./dist/index.js"
   },
   "author": "MidKnightXI",
   "license": "MIT",
