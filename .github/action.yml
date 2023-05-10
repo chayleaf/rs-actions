@@ -5,7 +5,6 @@ inputs:
   target:
     description: 'Target platform for compilation'
     required: false
-    default: ''
   cargo-toml-path:
     description: 'Path to the Cargo.toml file'
     required: false
