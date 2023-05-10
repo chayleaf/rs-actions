@@ -44,9 +44,9 @@ const exec = __importStar(__nccwpck_require__(1514));
 const github = __importStar(__nccwpck_require__(5438));
 const fs = __importStar(__nccwpck_require__(3292));
 const toml = __importStar(__nccwpck_require__(4920));
-function createRelease(tagName, targetCommitish, name, body) {
+function createRelease(tagName, targetCommitish, name, body, githubToken) {
     return __awaiter(this, void 0, void 0, function* () {
-        const octokit = github.getOctokit(core.getInput('github-token', { required: true }));
+        const octokit = github.getOctokit(githubToken, { required: true });
         const createReleaseResponse = yield octokit.rest.repos.createRelease({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
@@ -60,13 +60,8 @@ function createRelease(tagName, targetCommitish, name, body) {
         return createReleaseResponse.data.upload_url;
     });
 }
-function uploadAsset(uploadUrl, assetPath, assetName) {
+function uploadAsset(uploadUrl, assetPath, assetName, githubToken) {
     return __awaiter(this, void 0, void 0, function* () {
-        const githubToken = process.env.GITHUB_TOKEN;
-        if (githubToken === undefined) {
-            core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
-            process.exit();
-        }
         const octokit = github.getOctokit(core.getInput(githubToken, { required: true }));
         const headers = {
             'content-type': 'application/octet-stream',
@@ -130,9 +125,14 @@ function run() {
                 core.setOutput('output', 'Successfully compiled Rust code.');
                 process.exit();
             }
+            const githubToken = process.env.GITHUB_TOKEN;
+            if (githubToken === undefined) {
+                core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
+                process.exit();
+            }
             const releaseName = yield getVersionFromToml();
-            const uploadUrl = yield createRelease(releaseName, github.context.sha, releaseName, 'Description of the release.');
-            yield uploadAsset(uploadUrl, assetPath, assetName);
+            const uploadUrl = yield createRelease(releaseName, github.context.sha, releaseName, 'Description of the release.', githubToken);
+            yield uploadAsset(uploadUrl, assetPath, assetName, githubToken);
             core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
         }
         catch (error) {

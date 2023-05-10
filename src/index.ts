@@ -4,10 +4,9 @@ import * as github from '@actions/github';
 import * as fs from 'fs/promises';
 import * as toml from 'toml'
 
-async function createRelease(tagName: string, targetCommitish: string, name: string, body: string): Promise<string>
+async function createRelease(tagName: string, targetCommitish: string, name: string, body: string, githubToken: string): Promise<string>
 {
-    const octokit = github.getOctokit(
-        core.getInput('github-token', { required: true }));
+    const octokit = github.getOctokit(githubToken, { required: true });
 
     const createReleaseResponse = await octokit.rest.repos.createRelease({
         owner: github.context.repo.owner,
@@ -23,16 +22,8 @@ async function createRelease(tagName: string, targetCommitish: string, name: str
   return createReleaseResponse.data.upload_url;
 }
 
-async function uploadAsset(uploadUrl: string, assetPath: string, assetName: string): Promise<void>
+async function uploadAsset(uploadUrl: string, assetPath: string, assetName: string, githubToken: string): Promise<void>
 {
-    const githubToken: string | undefined = process.env.GITHUB_TOKEN;
-
-    if (githubToken === undefined)
-    {
-        core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
-        process.exit();
-    }
-
     const octokit = github.getOctokit(
         core.getInput(githubToken, { required: true }));
 
@@ -117,10 +108,16 @@ async function run()
         const assetName = 'my_rust_binary';
 
         const publishRelease = core.getInput('publish-release') === 'true';
-
         if (!publishRelease)
         {
             core.setOutput('output', 'Successfully compiled Rust code.');
+            process.exit();
+        }
+
+        const githubToken: string | undefined = process.env.GITHUB_TOKEN;
+        if (githubToken === undefined)
+        {
+            core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
             process.exit();
         }
 
@@ -130,10 +127,11 @@ async function run()
             releaseName,
             github.context.sha,
             releaseName,
-            'Description of the release.'
+            'Description of the release.',
+            githubToken
         );
 
-        await uploadAsset(uploadUrl, assetPath, assetName);
+        await uploadAsset(uploadUrl, assetPath, assetName, githubToken);
 
         core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
 
