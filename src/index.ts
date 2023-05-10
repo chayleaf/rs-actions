@@ -78,8 +78,10 @@ function getTarget(): string
 async function getVersionFromToml(): Promise<string>
 {
     const cargoTomlPath: string = core.getInput('cargo-toml-path');
-    console.info(await fs.readdir('./'));
-    console.info(await fs.readdir('../'));
+    let path = await fs.readdir('./')
+    console.info(path);
+    path = await fs.readdir('../')
+    console.info(path);
 
     try
     {
