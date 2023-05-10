@@ -20,7 +20,7 @@ async function createRelease(tagName: string, targetCommitish: string, name: str
         prerelease: false,
     });
 
-  return createReleaseResponse.data.upload_url;
+    return createReleaseResponse.data.upload_url;
 }
 
 async function uploadAsset(uploadUrl: string, assetPath: string, assetName: string, githubToken: string): Promise<void>
