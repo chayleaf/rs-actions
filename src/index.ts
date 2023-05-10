@@ -120,12 +120,10 @@ async function run()
             process.exit();
         }
 
-        const releaseName: string = `v${cargoToml.package.version}`;
-
         const uploadUrl = await createRelease(
-            releaseName,
+            github.context.ref,
             github.context.sha,
-            releaseName,
+            `v${cargoToml.package.version}`,
             'Description of the release.',
             githubToken
         );

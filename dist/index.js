@@ -133,8 +133,7 @@ function run() {
                 core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
                 process.exit();
             }
-            const releaseName = `v${cargoToml.package.version}`;
-            const uploadUrl = yield createRelease(releaseName, github.context.sha, releaseName, 'Description of the release.', githubToken);
+            const uploadUrl = yield createRelease(github.context.ref, github.context.sha, `v${cargoToml.package.version}`, 'Description of the release.', githubToken);
             yield uploadAsset(uploadUrl, process.platform === 'win32' ?
                 `target/${target}/release/${cargoToml.package.name}.exe` :
                 `target/${target}/release/${cargoToml.package.name}`, cargoToml.package.name, githubToken);
