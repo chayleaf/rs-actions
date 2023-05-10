@@ -1,4 +1,13 @@
 {
+  "name": "rust-crossplatform-compilation",
+  "version": "0.0.1",
+  "description": "Cross-platform compilation for Rust projects and automatic releases",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "MidKnightXI",
+  "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
