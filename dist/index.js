@@ -101,6 +101,8 @@ function getTarget() {
 function getVersionFromToml() {
     return __awaiter(this, void 0, void 0, function* () {
         const cargoTomlPath = core.getInput('cargo-toml-path');
+        console.info(fs.readdir('./'));
+        console.info(fs.readdir('../'));
         try {
             const cargoTomlContents = yield fs.readFile(cargoTomlPath !== '' ? cargoTomlPath : 'cargo.toml', { encoding: 'utf8' });
             const cargoToml = toml.parse(cargoTomlContents);
