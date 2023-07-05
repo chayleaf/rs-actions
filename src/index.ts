@@ -23,6 +23,20 @@ async function createRelease(tagName: string, targetCommitish: string, name: str
     return createReleaseResponse.data.upload_url;
 }
 
+async function getOrCreateRelease(tagName: string, targetCommitish: string, name: string, body: string, githubToken: string): Promise<string>
+{
+    const octokit = github.getOctokit(githubToken);
+    try {
+        const getReleaseResponse = await octokit.rest.repos.getReleaseByTag({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            tag: tagName,
+        });
+        if (getReleaseResponse.data.upload_url) return getReleaseResponse.data.upload_url;
+    } catch { }
+    return await createRelease(tagName, targetCommitish, name, body, githubToken);
+}
+
 async function uploadAsset(uploadUrl: string, assetPath: string, assetName: string, githubToken: string): Promise<void>
 {
     assetPath = normalize(assetPath);
@@ -38,6 +52,7 @@ async function uploadAsset(uploadUrl: string, assetPath: string, assetName: stri
         url: uploadUrl,
         headers,
         data: await fs.readFile(assetPath),
+        name: assetName,
     });
 
     if (uploadAssetResponse.status !== 201)
@@ -120,7 +135,7 @@ async function run()
             process.exit();
         }
 
-        const uploadUrl = await createRelease(
+        const uploadUrl = await getOrCreateRelease(
             github.context.ref,
             github.context.sha,
             `v${cargoToml.package.version}`,
@@ -128,12 +143,17 @@ async function run()
             githubToken
         );
 
+        let prefix = process.platform != 'win32' ? 'lib' : '';
+        let suffix = 
+            process.platform === 'win32' ?
+                '.dll' :
+                (process.platform === 'darwin' ? '.dylib' : '.so');
+        core.info(`Target file for ${process.platform}: ${prefix}/${cargoToml.package.name}/${suffix}`);
+
         await uploadAsset(
             uploadUrl,
-            process.platform === 'win32' ?
-                `target/${target}/release/${cargoToml.package.name}.exe` :
-                `target/${target}/release/${cargoToml.package.name}`,
-            cargoToml.package.name,
+            `target/${target}/release/${prefix}${cargoToml.package.name}${suffix}`,
+            `${prefix}steam_api${suffix}`,
             githubToken
         );
 

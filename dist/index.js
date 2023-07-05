@@ -61,6 +61,22 @@ function createRelease(tagName, targetCommitish, name, body, githubToken) {
         return createReleaseResponse.data.upload_url;
     });
 }
+function getOrCreateRelease(tagName, targetCommitish, name, body, githubToken) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const octokit = github.getOctokit(githubToken);
+        try {
+            const getReleaseResponse = yield octokit.rest.repos.getReleaseByTag({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                tag: tagName,
+            });
+            if (getReleaseResponse.data.upload_url)
+                return getReleaseResponse.data.upload_url;
+        }
+        catch (_a) { }
+        return yield createRelease(tagName, targetCommitish, name, body, githubToken);
+    });
+}
 function uploadAsset(uploadUrl, assetPath, assetName, githubToken) {
     return __awaiter(this, void 0, void 0, function* () {
         assetPath = (0, path_1.normalize)(assetPath);
@@ -74,6 +90,7 @@ function uploadAsset(uploadUrl, assetPath, assetName, githubToken) {
             url: uploadUrl,
             headers,
             data: yield fs.readFile(assetPath),
+            name: assetName,
         });
         if (uploadAssetResponse.status !== 201) {
             throw new Error(`Failed to upload asset: ${uploadAssetResponse.status} - ${uploadAssetResponse.data}`);
@@ -133,10 +150,13 @@ function run() {
                 core.setFailed("Failed to retrieve github token, please make sure to add GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} to your env tag");
                 process.exit();
             }
-            const uploadUrl = yield createRelease(github.context.ref, github.context.sha, `v${cargoToml.package.version}`, 'Description of the release.', githubToken);
-            yield uploadAsset(uploadUrl, process.platform === 'win32' ?
-                `target/${target}/release/${cargoToml.package.name}.exe` :
-                `target/${target}/release/${cargoToml.package.name}`, cargoToml.package.name, githubToken);
+            const uploadUrl = yield getOrCreateRelease(github.context.ref, github.context.sha, `v${cargoToml.package.version}`, 'Description of the release.', githubToken);
+            let prefix = process.platform != 'win32' ? 'lib' : '';
+            let suffix = process.platform === 'win32' ?
+                '.dll' :
+                (process.platform === 'darwin' ? '.dylib' : '.so');
+            core.info(`Target file for ${process.platform}: ${prefix}/${cargoToml.package.name}/${suffix}`);
+            yield uploadAsset(uploadUrl, `target/${target}/release/${prefix}${cargoToml.package.name}${suffix}`, `${prefix}steam_api${suffix}`, githubToken);
             core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
         }
         catch (error) {
@@ -7742,8 +7762,11 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 
 		if (headers['transfer-encoding'] === 'chunked' && !headers['content-length']) {
 			response.once('close', function (hadError) {
+				// tests for socket presence, as in some situations the
+				// the 'socket' event is not triggered for the request
+				// (happens in deno), avoids `TypeError`
 				// if a data listener is still present we didn't end cleanly
-				const hasDataListener = socket.listenerCount('data') > 0;
+				const hasDataListener = socket && socket.listenerCount('data') > 0;
 
 				if (hasDataListener && !hadError) {
 					const err = new Error('Premature close');
