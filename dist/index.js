@@ -152,11 +152,14 @@ function run() {
             }
             const uploadUrl = yield getOrCreateRelease(github.context.ref, github.context.sha, `v${cargoToml.package.version}`, 'Description of the release.', githubToken);
             let prefix = process.platform != 'win32' ? 'lib' : '';
-            let suffix = process.platform === 'win32' ?
-                '.dll' :
+            let localSuffix = process.platform === 'win32' ?
+                ".dll" :
                 (process.platform === 'darwin' ? '.dylib' : '.so');
-            core.info(`Target file for ${process.platform}: ${prefix}/${cargoToml.package.name}/${suffix}`);
-            yield uploadAsset(uploadUrl, `target/${target}/release/${prefix}${cargoToml.package.name}${suffix}`, `${prefix}steam_api${suffix}`, githubToken);
+            let remoteSuffix = process.platform === 'win32' ?
+                (target === 'x86_64-pc-windows-msvc' ? "64.dll" : ".dll") :
+                (process.platform === 'darwin' ? '.dylib' : '.so');
+            core.info(`Target file for ${process.platform}: ${prefix}/${cargoToml.package.name}/${localSuffix}`);
+            yield uploadAsset(uploadUrl, `target/${target}/release/${prefix}${cargoToml.package.name}${localSuffix}`, `${prefix}steam_api${remoteSuffix}`, githubToken);
             core.setOutput('output', 'Successfully compiled and drafted your Rust code.');
         }
         catch (error) {

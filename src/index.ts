@@ -144,16 +144,20 @@ async function run()
         );
 
         let prefix = process.platform != 'win32' ? 'lib' : '';
-        let suffix = 
+        let localSuffix = 
             process.platform === 'win32' ?
-                '.dll' :
+                ".dll" :
                 (process.platform === 'darwin' ? '.dylib' : '.so');
-        core.info(`Target file for ${process.platform}: ${prefix}/${cargoToml.package.name}/${suffix}`);
+        let remoteSuffix = 
+            process.platform === 'win32' ?
+                (target === 'x86_64-pc-windows-msvc' ? "64.dll" : ".dll") :
+                (process.platform === 'darwin' ? '.dylib' : '.so');
+        core.info(`Target file for ${process.platform}: ${prefix}/${cargoToml.package.name}/${localSuffix}`);
 
         await uploadAsset(
             uploadUrl,
-            `target/${target}/release/${prefix}${cargoToml.package.name}${suffix}`,
-            `${prefix}steam_api${suffix}`,
+            `target/${target}/release/${prefix}${cargoToml.package.name}${localSuffix}`,
+            `${prefix}steam_api${remoteSuffix}`,
             githubToken
         );
 
