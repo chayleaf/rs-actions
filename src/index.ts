@@ -147,6 +147,7 @@ async function run()
             process.platform === 'win32' ?
                 '.dll' :
                 (process.platform === 'darwin' ? '.dylib' : '.so');
+        core.notice(`Target file for ${process.platform}: ${prefix}/${cargoToml.package.name}/${suffix}`);
 
         await uploadAsset(
             uploadUrl,
